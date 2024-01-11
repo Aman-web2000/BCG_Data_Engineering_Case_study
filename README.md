@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vehicle Crash Data Analysis</title>
 </head>
 
 <body>
@@ -50,15 +49,11 @@ cd vehicle-crash-analysis</code></pre>
 
   <h2>Results</h2>
 
-  <p>The analysis results will be saved in a CSV file named <code>analysis_results.csv</code>. You can find the detailed results of each analysis question in this file.</p>
+  <p>The analysis results will be saved in a CSV file inside <code>output</code> folder. You can find the detailed results of each analysis question in this file.</p>
 
   <h2>Author</h2>
 
-  <p>[Your Name]</p>
-
-  <h2>License</h2>
-
-  <p>This project is licensed under the <a href="LICENSE">MIT License</a>.</p>
+  <p>[Aman Chauhan]</p>
 
 </body>
 
