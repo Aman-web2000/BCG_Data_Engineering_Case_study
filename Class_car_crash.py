@@ -2,10 +2,12 @@
 
 from pyspark.sql import SparkSession
 from pyspark.sql import Row
-from pyspark.sql.functions import col, sum, count, row_number, rank
+from pyspark.sql.functions import col, sum, count, row_number, rank, upper
 from pyspark.sql.window import Window
 from typing import List, Dict
+import os
 import sys
+import csv
 
 class CarCrashAnalytics:
     def __init__(self, spark, config):
@@ -49,7 +51,7 @@ class CarCrashAnalytics:
         df_car = units_df.filter(units_df['VEH_BODY_STYL_ID'].isin(car_list))
         df_joined = df_car.join(lis_of_carsh_id,"CRASH_ID",'inner')
         df_joined = df_joined.groupBy("VEH_MAKE_ID").agg(count("CRASH_ID").alias("count"))
-        result =  df_joined.sort(col("count").desc()).limit(5)   
+        result =  df_joined.orderBy(col("count").desc()).limit(5)   
         return result
     
     def count_hit_run(self, primary_person_df, units_df):
@@ -67,10 +69,10 @@ class CarCrashAnalytics:
         df_hit_and_run = units_df.filter(units_df['VEH_HNR_FL']=='Y')
 
         ## filtering data for valid licence and hit and run cases
-        result = df_hit_and_run.join(df_lic, 'CRASH_ID', 'inner').agg(count("CRASH_ID"))
+        result = df_hit_and_run.join(df_lic, 'CRASH_ID', 'inner').agg(count("CRASH_ID").alias("count"))
 
-        return result.count()
-    
+        return result
+
     def count_not_female_states(self, primary_person_df):
         """Analysis 5: Which state has highest number of accidents in which females are not involved?"""
         
@@ -80,7 +82,7 @@ class CarCrashAnalytics:
 
         df_state_count = df_not_female.groupBy("DRVR_LIC_STATE_ID").agg(count('CRASH_ID').alias("crash_count"))
 
-        result = df_state_count.orderBy(col("crash_count").desc()).limit(1).show()
+        result = df_state_count.orderBy(col("crash_count").desc()).limit(1)
         
         return result
     
@@ -196,6 +198,23 @@ class CarCrashAnalytics:
 
         return result
 
+    def save_txt(self, output_file, result):
+        """save the output in a txt file inside output_file
+        output_file: output_file_path/output_file_name
+        result : value to store"""
+               
+        output_directory = os.path.dirname(output_file)
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+                        
+        # Save result to output path as CSV
+        my_variable = [("count", result)]
+        # Save variable to .csv file
+        with open(output_file, "w", newline="") as csv_file:
+            csv_writer = csv.writer(csv_file)
+            csv_writer.writerows(my_variable)
+            
+        
 
     def run_analysis(self):
         # Load data using input path
@@ -213,22 +232,18 @@ class CarCrashAnalytics:
         print("number of crashes (accidents) in which number of males killed are greater than 2:")
         print(result)
         output_file = "Output/output_count_male_killed.csv"
+        
         # Save result to output path as CSV
-        data_row= Row(count=result)
-        result = self.spark.createDataFrame([data_row])
-        result.write.csv(output_file, header=True, mode='overwrite')
-        # result.write.mode("overwrite").csv(output_file, header=True, sep=",", quoteAll=True)
+        self.save_txt(output_file, result)
         
         # count_two_wheelers
         result = self.count_two_wheelers(units_df)
         print("number of crashes (accidents) in which number of males killed are greater than 2:")
         print(result)
         output_file = "Output/output_count_two_wheelers.csv"
-        # Save result to output path as CSV
-        data_row= Row(count=result)
-        result = self.spark.createDataFrame([data_row])
-        result.write.csv(output_file, header=True, mode='overwrite')
         
+        self.save_txt(output_file, result)
+            
         # count_airbags_not_deployed
         result = self.count_airbags_not_deployed(primary_person_df, units_df)
         print("Top 5 Vehicle Makes of the cars present in the crashes in which driver died and Airbags did not deploy")
@@ -240,12 +255,10 @@ class CarCrashAnalytics:
         # count_hit_run
         result = self.count_hit_run(primary_person_df, units_df)
         print("number of Vehicles with driver having valid licences involved in hit and run")
-        result.show()
+        print(result)
         output_file = "Output/output_count_hit_run.csv"
         # Save result to output path as CSV
-        data_row= Row(count=result)
-        result = self.spark.createDataFrame([data_row])
-        result.write.csv(output_file, header=True, mode='overwrite')
+        self.save_txt(output_file, result)
         
         # count_not_female_states
         result = self.count_not_female_states(primary_person_df)
@@ -285,12 +298,10 @@ class CarCrashAnalytics:
         print(result)
         output_file = "Output/output_count_no_dam_insur.csv"
         # Save result to output path as CSV
-        data_row= Row(count=result)
-        result = self.spark.createDataFrame([data_row])
-        result.write.csv(output_file, header=True, mode='overwrite')
+        self.save_txt(output_file, result)
         
         # vech_make_speeding
-        result = self.vech_make_speeding(primary_person_df, units_df, damage_df)
+        result = self.vech_make_speeding(primary_person_df, units_df, charges_df)
         print("Count of Distinct Crash IDs where No Damaged Property was observed and Damage Level (VEH_DMAG_SCL~) is above 4 and car avails Insurance")
         result.show()
         output_file = "Output/output_vech_make_speeding.csv"
