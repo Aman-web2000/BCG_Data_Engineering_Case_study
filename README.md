@@ -32,7 +32,7 @@
 
   <ol>
     <li>Clone the repository:</li>
-    <pre><code>git clone https://github.com/your-username/vehicle-crash-analysis.git
+    <pre><code>git clone https://github.com/Aman-web2000/BCG_Data_Engineering_Case_study.git
 cd vehicle-crash-analysis</code></pre>
     <li>Install the required dependencies:</li>
     <pre><code>pip install -r requirements.txt</code></pre>
